@@ -1,0 +1,6 @@
+[DEFAULT]
+user=ocid1.user.oc1..aaaaaaaahzdfms77zp2vzowd6e3perqdsluh3iad4tw62mucar26qcscyojq
+fingerprint=31:d3:ff:f0:2e:3e:f7:92:da:5a:f5:b0:9a:22:c8:c9
+key_file=/Users/prasadpatil/.oci/oci_api_key.pem
+tenancy=ocid1.tenancy.oc1..aaaaaaaac3hll54u4dtpbthgvgv6rztim2i2bj2nwubwqvlp2vq5lhypjjaq
+region=us-ashburn-1

@@ -2,6 +2,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
 
+  routeRules: {
+    '/backend/**': { proxy: 'http://129.80.239.28/**' }
+  },
+
   modules: [
     '@nuxt/ui',
     '@pinia/nuxt',
