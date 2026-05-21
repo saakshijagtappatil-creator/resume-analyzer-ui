@@ -1,6 +1,10 @@
 <script setup>
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+
+const isLandingPage = computed(() => route.path === '/')
+const showAuthNav = computed(() => authStore.isLoggedIn && !isLandingPage.value)
 
 const handleLogout = () => {
   authStore.logout()
@@ -24,8 +28,8 @@ const displayName = computed(() => {
       <span style="color: white; font-size: 16px; font-weight: 600;">Resume Analyzer</span>
     </NuxtLink>
 
-    <!-- Nav links — only show when logged in -->
-    <div v-if="authStore.isLoggedIn" style="display: flex; align-items: center; gap: 2rem;">
+    <!-- Nav links — only show when logged in and not on landing page -->
+    <div v-if="showAuthNav" style="display: flex; align-items: center; gap: 2rem;">
       <NuxtLink
         to="/dashboard"
         style="color: #94a3b8; text-decoration: none; font-size: 14px;"
@@ -52,8 +56,8 @@ const displayName = computed(() => {
     <!-- Right side -->
     <div style="display: flex; align-items: center; gap: 1rem;">
 
-      <!-- Logged in -->
-      <div v-if="authStore.isLoggedIn" style="display: flex; align-items: center; gap: 1rem;">
+      <!-- Logged in (not on landing page) -->
+      <div v-if="showAuthNav" style="display: flex; align-items: center; gap: 1rem;">
         <span style="color: #94a3b8; font-size: 13px;">
           {{ displayName }}
         </span>
