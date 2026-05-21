@@ -8,10 +8,10 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const stats = ref(null)
+const allResumes = ref([])
 const recentResumes = ref([])
 const isLoading = ref(true)
 const error = ref('')
-const rawStatsDebug = ref(null)
 let pollInterval = null
 
 const fetchDashboardData = async () => {
@@ -20,15 +20,14 @@ const fetchDashboardData = async () => {
       api.getHistoryStats(),
       api.getAllResumes()
     ])
-    console.log('[Dashboard] raw stats response:', statsResponse)
-    console.log('[Dashboard] raw resumes response:', resumesResponse)
-    rawStatsDebug.value = JSON.stringify(statsResponse, null, 2)
     stats.value = statsResponse.data ?? statsResponse
-    recentResumes.value = (resumesResponse.data ?? resumesResponse)?.slice(0, 5) || []
+    allResumes.value = resumesResponse.data ?? resumesResponse ?? []
+    recentResumes.value = allResumes.value.slice(0, 5)
   } catch (err) {
-    console.error('[Dashboard] failed to load data:', err)
     error.value = 'Failed to load dashboard data'
     stats.value = null
+    allResumes.value = []
+    recentResumes.value = []
   } finally {
     isLoading.value = false
   }
@@ -66,22 +65,16 @@ watch(hasPendingAnalyses, (hasPending) => {
 const welcomeMessage = computed(() => {
   const name = authStore.user?.username
   const capitalized = name ? name.charAt(0).toUpperCase() + name.slice(1) : ''
-  const isNew = totalAnalyses.value === null || totalAnalyses.value === 0
+  const isNew = !totalAnalyses.value
   return isNew ? `Welcome, ${capitalized} 👋` : `Welcome back, ${capitalized} 👋`
 })
 
-const totalAnalyses = computed(() =>
-  stats.value?.totalResumes ?? stats.value?.totalAnalyses ?? null
-)
+const totalAnalyses = computed(() => stats.value?.totalResumes ?? null)
 const completedCount = computed(() =>
-  stats.value?.completedResumes ?? stats.value?.completed ?? stats.value?.completedAnalyses ?? null
+  allResumes.value.filter(r => r.status === 'COMPLETED').length
 )
-const averageScore = computed(() =>
-  stats.value?.averageScore ?? null
-)
-const highestScore = computed(() =>
-  stats.value?.highestScore ?? null
-)
+const averageScore = computed(() => stats.value?.averageScore ?? null)
+const highestScore = computed(() => stats.value?.highestScore ?? null)
 
 const getStatusColor = (status) => {
   if (status === 'COMPLETED')  return { bg: '#dcfce7', color: '#166534' }
@@ -111,14 +104,6 @@ const formatDate = (dateStr) => {
       <p style="color: #64748b; font-size: 15px;">
         Here is an overview of your resume analyses
       </p>
-    </div>
-
-    <!-- DEBUG PANEL — remove after confirming field names -->
-    <div v-if="rawStatsDebug" style="background: #0f172a; color: #4ade80; font-family: monospace; font-size: 12px; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; white-space: pre-wrap; word-break: break-all;">
-      <strong style="color: #facc15;">Raw /api/history/stats response:</strong>{{ '\n' }}{{ rawStatsDebug }}
-    </div>
-    <div v-else-if="!isLoading && error" style="background: #fee2e2; color: #991b1b; font-size: 13px; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-      Stats API error — check network tab
     </div>
 
     <!-- Loading -->
