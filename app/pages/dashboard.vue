@@ -27,6 +27,13 @@ onMounted(async () => {
   }
 })
 
+const welcomeMessage = computed(() => {
+  const name = authStore.user?.username
+  const capitalized = name ? name.charAt(0).toUpperCase() + name.slice(1) : ''
+  const isNew = !stats.value || stats.value.totalAnalyses === 0
+  return isNew ? `Welcome, ${capitalized} 👋` : `Welcome back, ${capitalized} 👋`
+})
+
 const getStatusColor = (status) => {
   if (status === 'COMPLETED') return { bg: '#dcfce7', color: '#166534' }
   if (status === 'PENDING') return { bg: '#fef3c7', color: '#92400e' }
@@ -49,7 +56,7 @@ const formatDate = (dateStr) => {
     <!-- Header -->
     <div style="margin-bottom: 2.5rem;">
       <h1 style="font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">
-        Welcome back, {{ authStore.user?.username }} 👋
+        {{ welcomeMessage }}
       </h1>
       <p style="color: #64748b; font-size: 15px;">
         Here is an overview of your resume analyses
