@@ -19,10 +19,14 @@ const fetchDashboardData = async () => {
       api.getHistoryStats(),
       api.getAllResumes()
     ])
-    stats.value = statsResponse.data
-    recentResumes.value = resumesResponse.data?.slice(0, 5) || []
+    console.log('[Dashboard] raw stats response:', statsResponse)
+    console.log('[Dashboard] raw resumes response:', resumesResponse)
+    stats.value = statsResponse.data ?? statsResponse
+    recentResumes.value = (resumesResponse.data ?? resumesResponse)?.slice(0, 5) || []
   } catch (err) {
+    console.error('[Dashboard] failed to load data:', err)
     error.value = 'Failed to load dashboard data'
+    stats.value = null
   } finally {
     isLoading.value = false
   }
@@ -60,12 +64,21 @@ watch(hasPendingAnalyses, (hasPending) => {
 const welcomeMessage = computed(() => {
   const name = authStore.user?.username
   const capitalized = name ? name.charAt(0).toUpperCase() + name.slice(1) : ''
-  const isNew = !stats.value || (stats.value.totalAnalyses ?? 0) === 0
+  const isNew = totalAnalyses.value === null || totalAnalyses.value === 0
   return isNew ? `Welcome, ${capitalized} 👋` : `Welcome back, ${capitalized} 👋`
 })
 
+const totalAnalyses = computed(() =>
+  stats.value?.totalResumes ?? stats.value?.totalAnalyses ?? null
+)
 const completedCount = computed(() =>
-  stats.value?.completed ?? stats.value?.completedAnalyses ?? 0
+  stats.value?.completedResumes ?? stats.value?.completed ?? stats.value?.completedAnalyses ?? null
+)
+const averageScore = computed(() =>
+  stats.value?.averageScore ?? null
+)
+const highestScore = computed(() =>
+  stats.value?.highestScore ?? null
 )
 
 const getStatusColor = (status) => {
@@ -110,22 +123,22 @@ const formatDate = (dateStr) => {
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Analyses</p>
-          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ stats?.totalAnalyses ?? 0 }}</p>
+          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ totalAnalyses !== null ? totalAnalyses : '—' }}</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Average Score</p>
-          <p style="font-size: 32px; font-weight: 700; color: #1d4ed8;">{{ stats?.averageScore != null ? stats.averageScore.toFixed(1) : '0.0' }}%</p>
+          <p style="font-size: 32px; font-weight: 700; color: #1d4ed8;">{{ averageScore !== null ? averageScore.toFixed(1) + '%' : '—' }}</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Highest Score</p>
-          <p style="font-size: 32px; font-weight: 700; color: #16a34a;">{{ stats?.highestScore != null ? stats.highestScore.toFixed(1) : '0.0' }}%</p>
+          <p style="font-size: 32px; font-weight: 700; color: #16a34a;">{{ highestScore !== null ? highestScore.toFixed(1) + '%' : '—' }}</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Completed</p>
-          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ completedCount }}</p>
+          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ completedCount !== null ? completedCount : '—' }}</p>
         </div>
 
       </div>
