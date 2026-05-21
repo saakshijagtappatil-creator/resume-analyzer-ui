@@ -6,6 +6,11 @@ const handleLogout = () => {
   authStore.logout()
   router.push('/login')
 }
+
+const displayName = computed(() => {
+  const u = authStore.user?.username
+  return u ? u.charAt(0).toUpperCase() + u.slice(1) : ''
+})
 </script>
 
 <template>
@@ -50,7 +55,7 @@ const handleLogout = () => {
       <!-- Logged in -->
       <div v-if="authStore.isLoggedIn" style="display: flex; align-items: center; gap: 1rem;">
         <span style="color: #94a3b8; font-size: 13px;">
-          {{ authStore.user?.username }}
+          {{ displayName }}
         </span>
         <button
           @click="handleLogout"
