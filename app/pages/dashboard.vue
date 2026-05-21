@@ -11,8 +11,9 @@ const stats = ref(null)
 const recentResumes = ref([])
 const isLoading = ref(true)
 const error = ref('')
+let pollInterval = null
 
-onMounted(async () => {
+const fetchDashboardData = async () => {
   try {
     const [statsResponse, resumesResponse] = await Promise.all([
       api.getHistoryStats(),
@@ -25,19 +26,53 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const hasPendingAnalyses = computed(() =>
+  recentResumes.value.some(r => r.status === 'PENDING' || r.status === 'PROCESSING')
+)
+
+const startPolling = () => {
+  if (pollInterval) return
+  pollInterval = setInterval(async () => {
+    await fetchDashboardData()
+    if (!hasPendingAnalyses.value) stopPolling()
+  }, 5000)
+}
+
+const stopPolling = () => {
+  clearInterval(pollInterval)
+  pollInterval = null
+}
+
+onMounted(async () => {
+  await fetchDashboardData()
+  if (hasPendingAnalyses.value) startPolling()
+})
+
+onUnmounted(() => stopPolling())
+
+watch(hasPendingAnalyses, (hasPending) => {
+  if (hasPending) startPolling()
+  else stopPolling()
 })
 
 const welcomeMessage = computed(() => {
   const name = authStore.user?.username
   const capitalized = name ? name.charAt(0).toUpperCase() + name.slice(1) : ''
-  const isNew = !stats.value || stats.value.totalAnalyses === 0
+  const isNew = !stats.value || (stats.value.totalAnalyses ?? 0) === 0
   return isNew ? `Welcome, ${capitalized} 👋` : `Welcome back, ${capitalized} 👋`
 })
 
+const completedCount = computed(() =>
+  stats.value?.completed ?? stats.value?.completedAnalyses ?? 0
+)
+
 const getStatusColor = (status) => {
-  if (status === 'COMPLETED') return { bg: '#dcfce7', color: '#166534' }
-  if (status === 'PENDING') return { bg: '#fef3c7', color: '#92400e' }
-  if (status === 'FAILED') return { bg: '#fee2e2', color: '#991b1b' }
+  if (status === 'COMPLETED')  return { bg: '#dcfce7', color: '#166534' }
+  if (status === 'PENDING')    return { bg: '#fef3c7', color: '#92400e' }
+  if (status === 'PROCESSING') return { bg: '#dbeafe', color: '#1e40af' }
+  if (status === 'FAILED')     return { bg: '#fee2e2', color: '#991b1b' }
   return { bg: '#f1f5f9', color: '#475569' }
 }
 
@@ -75,22 +110,22 @@ const formatDate = (dateStr) => {
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Analyses</p>
-          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ stats?.totalAnalyses || 0 }}</p>
+          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ stats?.totalAnalyses ?? 0 }}</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Average Score</p>
-          <p style="font-size: 32px; font-weight: 700; color: #1d4ed8;">{{ stats?.averageScore?.toFixed(1) || '0.0' }}%</p>
+          <p style="font-size: 32px; font-weight: 700; color: #1d4ed8;">{{ stats?.averageScore != null ? stats.averageScore.toFixed(1) : '0.0' }}%</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Highest Score</p>
-          <p style="font-size: 32px; font-weight: 700; color: #16a34a;">{{ stats?.highestScore?.toFixed(1) || '0.0' }}%</p>
+          <p style="font-size: 32px; font-weight: 700; color: #16a34a;">{{ stats?.highestScore != null ? stats.highestScore.toFixed(1) : '0.0' }}%</p>
         </div>
 
         <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
           <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Completed</p>
-          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ stats?.completedAnalyses || 0 }}</p>
+          <p style="font-size: 32px; font-weight: 700; color: #0f172a;">{{ completedCount }}</p>
         </div>
 
       </div>
@@ -120,7 +155,10 @@ const formatDate = (dateStr) => {
       <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
 
         <div style="padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="font-size: 16px; font-weight: 600; color: #0f172a;">Recent Analyses</h2>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h2 style="font-size: 16px; font-weight: 600; color: #0f172a;">Recent Analyses</h2>
+            <span v-if="hasPendingAnalyses" style="font-size: 11px; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px;">Updating...</span>
+          </div>
           <button
             @click="router.push('/history')"
             style="background: transparent; border: none; color: #1d4ed8; font-size: 13px; cursor: pointer;"
