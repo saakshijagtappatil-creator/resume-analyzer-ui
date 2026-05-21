@@ -11,6 +11,7 @@ const stats = ref(null)
 const recentResumes = ref([])
 const isLoading = ref(true)
 const error = ref('')
+const rawStatsDebug = ref(null)
 let pollInterval = null
 
 const fetchDashboardData = async () => {
@@ -21,6 +22,7 @@ const fetchDashboardData = async () => {
     ])
     console.log('[Dashboard] raw stats response:', statsResponse)
     console.log('[Dashboard] raw resumes response:', resumesResponse)
+    rawStatsDebug.value = JSON.stringify(statsResponse, null, 2)
     stats.value = statsResponse.data ?? statsResponse
     recentResumes.value = (resumesResponse.data ?? resumesResponse)?.slice(0, 5) || []
   } catch (err) {
@@ -109,6 +111,14 @@ const formatDate = (dateStr) => {
       <p style="color: #64748b; font-size: 15px;">
         Here is an overview of your resume analyses
       </p>
+    </div>
+
+    <!-- DEBUG PANEL — remove after confirming field names -->
+    <div v-if="rawStatsDebug" style="background: #0f172a; color: #4ade80; font-family: monospace; font-size: 12px; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; white-space: pre-wrap; word-break: break-all;">
+      <strong style="color: #facc15;">Raw /api/history/stats response:</strong>{{ '\n' }}{{ rawStatsDebug }}
+    </div>
+    <div v-else-if="!isLoading && error" style="background: #fee2e2; color: #991b1b; font-size: 13px; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+      Stats API error — check network tab
     </div>
 
     <!-- Loading -->
