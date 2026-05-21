@@ -52,8 +52,8 @@ const handleLogin = async () => {
         <div style="width: 48px; height: 48px; background: #1d4ed8; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
           <span style="color: white; font-size: 22px; font-weight: 700;">R</span>
         </div>
-        <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Welcome back</h1>
-        <p style="color: #64748b; font-size: 14px;">Sign in to your account</p>
+        <h1 style="font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Sign in to Resume Analyzer</h1>
+        <p style="color: #64748b; font-size: 14px;">Get AI-powered insights on your resume</p>
       </div>
 
       <!-- Error -->

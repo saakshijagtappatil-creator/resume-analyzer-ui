@@ -127,20 +127,10 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Tech Stack Section -->
-    <section style="padding: 60px 2rem; background: #f8fafc; text-align: center;">
-      <div style="max-width: 800px; margin: 0 auto;">
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 1px;">
-          Built with enterprise-grade technology
-        </p>
-        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
-          <span v-for="tech in techs" :key="tech"
-            style="background: white; border: 1px solid #e2e8f0; color: #475569; padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 500;">
-            {{ tech }}
-          </span>
-        </div>
-      </div>
-    </section>
+    <!-- Footer -->
+    <footer style="padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+      <p style="color: #94a3b8; font-size: 14px;">© 2026 Resume Analyzer. All rights reserved.</p>
+    </footer>
 
     <!-- CTA Section -->
     <section style="padding: 80px 2rem; background: #0f172a; text-align: center;">
@@ -163,16 +153,3 @@ onMounted(() => {
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      techs: [
-        'Spring Boot 3', 'Java 17', 'PostgreSQL',
-        'Redis', 'RabbitMQ', 'Docker',
-        'Kubernetes', 'Claude AI', 'Nuxt 3'
-      ]
-    }
-  }
-}
-</script>

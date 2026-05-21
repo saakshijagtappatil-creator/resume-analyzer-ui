@@ -13,6 +13,7 @@ const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref(false)
 const error = ref('')
+const signInPrompt = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
@@ -39,6 +40,7 @@ const allRulesPass = computed(() =>
 
 const handleRegister = async () => {
   error.value = ''
+  signInPrompt.value = false
 
   if (!username.value || !email.value || !password.value || !confirmPassword.value) {
     error.value = 'Please fill in all fields'
@@ -58,7 +60,15 @@ const handleRegister = async () => {
       router.push('/dashboard')
     }
   } catch (err) {
-    error.value = err?.data?.message || 'Registration failed. Please try again.'
+    const msg = err?.data?.message || ''
+    if (msg.toLowerCase().includes('email already')) {
+      error.value = 'An account with this email already exists. Please sign in instead.'
+      signInPrompt.value = true
+    } else if (msg.toLowerCase().includes('username') && msg.toLowerCase().includes('already')) {
+      error.value = 'This username is already taken. Please choose a different one.'
+    } else {
+      error.value = msg || 'Registration failed. Please try again.'
+    }
   } finally {
     isLoading.value = false
   }
@@ -81,6 +91,11 @@ const handleRegister = async () => {
       <!-- Error -->
       <div v-if="error" style="background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 1.5rem;">
         {{ error }}
+        <div v-if="signInPrompt" style="margin-top: 8px;">
+          <NuxtLink to="/login" style="color: #991b1b; font-weight: 600; text-decoration: underline;">
+            Sign In
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Form -->
