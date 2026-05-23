@@ -72,6 +72,22 @@ export const useApi = () => {
     })
   }
 
+  const downloadResume = async (resumeId, filename) => {
+    const response = await fetch(`${baseURL}/api/resumes/${resumeId}/download`, {
+      headers: { 'Authorization': `Bearer ${authStore.token}` }
+    })
+    if (!response.ok) throw new Error(`Download failed: ${response.status}`)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   // ── HISTORY ───────────────────────────────────────────
   const getHistory = async () => {
     return await $fetch(`${baseURL}/api/history`, {
@@ -93,6 +109,7 @@ export const useApi = () => {
     getResumeResult,
     getAllResumes,
     deleteResume,
+    downloadResume,
     getHistory,
     getHistoryStats
   }

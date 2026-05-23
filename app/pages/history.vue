@@ -11,6 +11,10 @@ const isLoading = ref(true)
 const error = ref('')
 const searchQuery = ref('')
 const filterStatus = ref('ALL')
+const downloadingId = ref(null)
+const deletingId = ref(null)
+const deleteTarget = ref(null)
+const toasts = ref([])
 
 onMounted(async () => {
   try {
@@ -56,10 +60,108 @@ const formatDate = (dateStr) => {
     minute: '2-digit'
   })
 }
+
+const showToast = (message, type = 'success') => {
+  const id = Date.now()
+  toasts.value.push({ id, message, type })
+  setTimeout(() => {
+    toasts.value = toasts.value.filter(t => t.id !== id)
+  }, 3500)
+}
+
+const handleDownload = async (item) => {
+  if (downloadingId.value) return
+  downloadingId.value = item.resumeId
+  try {
+    await api.downloadResume(item.resumeId, item.originalFilename)
+  } catch {
+    showToast('Failed to download. The file may no longer be available.', 'error')
+  } finally {
+    downloadingId.value = null
+  }
+}
+
+const handleDeleteClick = (item) => {
+  deleteTarget.value = { id: item.resumeId, filename: item.originalFilename }
+}
+
+const cancelDelete = () => {
+  deleteTarget.value = null
+}
+
+const confirmDelete = async () => {
+  if (!deleteTarget.value || deletingId.value) return
+  const { id } = deleteTarget.value
+  deletingId.value = id
+  deleteTarget.value = null
+  try {
+    await api.deleteResume(id)
+    history.value = history.value.filter(h => h.resumeId !== id)
+    showToast('Resume deleted successfully')
+  } catch {
+    showToast('Failed to delete resume. Please try again.', 'error')
+  } finally {
+    deletingId.value = null
+  }
+}
 </script>
 
 <template>
   <div style="max-width: 1100px; margin: 0 auto; padding: 3rem 2rem;">
+
+    <!-- Toast Notifications -->
+    <div style="position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem;">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        :style="{
+          padding: '12px 18px',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '500',
+          background: toast.type === 'error' ? '#fee2e2' : '#dcfce7',
+          color: toast.type === 'error' ? '#991b1b' : '#166534',
+          border: '1px solid',
+          borderColor: toast.type === 'error' ? '#fca5a5' : '#86efac',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          minWidth: '260px'
+        }"
+      >
+        {{ toast.message }}
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="deleteTarget"
+      style="position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; display: flex; align-items: center; justify-content: center;"
+      @click.self="cancelDelete"
+    >
+      <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);">
+        <div style="font-size: 32px; margin-bottom: 1rem;">🗑️</div>
+        <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Delete Resume</h3>
+        <p style="font-size: 14px; color: #475569; margin-bottom: 0.5rem;">
+          Are you sure you want to delete <strong>{{ deleteTarget.filename }}</strong>?
+        </p>
+        <p style="font-size: 13px; color: #94a3b8; margin-bottom: 1.75rem;">
+          This will also delete the analysis results. This action cannot be undone.
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button
+            @click="cancelDelete"
+            style="padding: 9px 20px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; color: #475569; font-size: 14px; cursor: pointer; font-weight: 500;"
+          >
+            Cancel
+          </button>
+          <button
+            @click="confirmDelete"
+            style="padding: 9px 20px; border-radius: 8px; border: none; background: #dc2626; color: white; font-size: 14px; cursor: pointer; font-weight: 600;"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Header -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
@@ -81,16 +183,12 @@ const formatDate = (dateStr) => {
 
     <!-- Filters -->
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-
-      <!-- Search -->
       <input
         v-model="searchQuery"
         type="text"
         placeholder="Search by filename..."
         style="flex: 1; min-width: 200px; padding: 8px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #0f172a; outline: none;"
       />
-
-      <!-- Status Filter -->
       <div style="display: flex; gap: 0.5rem;">
         <button
           v-for="status in ['ALL', 'COMPLETED', 'PENDING', 'FAILED']"
@@ -111,7 +209,6 @@ const formatDate = (dateStr) => {
           {{ status }}
         </button>
       </div>
-
     </div>
 
     <!-- Loading -->
@@ -141,13 +238,69 @@ const formatDate = (dateStr) => {
 
     <!-- History List -->
     <div v-else style="display: flex; flex-direction: column; gap: 1rem;">
-
       <div
         v-for="item in filteredHistory"
         :key="item.resumeId || item.id"
-        style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;"
+        style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; position: relative;"
       >
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+        <!-- Action buttons — top right corner -->
+        <div style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 0.4rem;">
+
+          <!-- View Results -->
+          <button
+            v-if="item.status === 'COMPLETED'"
+            @click="router.push(`/results/${item.resumeId || item.id}`)"
+            title="View results"
+            style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
+          </button>
+
+          <!-- Download -->
+          <button
+            @click="handleDownload(item)"
+            :disabled="downloadingId === item.resumeId"
+            title="Download PDF"
+            :style="{
+              width: '32px', height: '32px', borderRadius: '6px',
+              border: '1px solid #e2e8f0', background: '#f8fafc',
+              color: downloadingId === item.resumeId ? '#94a3b8' : '#475569',
+              cursor: downloadingId === item.resumeId ? 'wait' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }"
+          >
+            <svg v-if="downloadingId !== item.resumeId" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <svg v-else width="15" height="15" stroke="currentColor" viewBox="0 0 24 24" style="animation: spin 1s linear infinite;">
+              <circle cx="12" cy="12" r="9" stroke-width="2" fill="none" stroke-dasharray="28" stroke-dashoffset="10"/>
+            </svg>
+          </button>
+
+          <!-- Delete -->
+          <button
+            @click="handleDeleteClick(item)"
+            :disabled="deletingId === item.resumeId"
+            title="Delete resume"
+            :style="{
+              width: '32px', height: '32px', borderRadius: '6px',
+              border: '1px solid #fecaca', background: '#fff1f2',
+              color: deletingId === item.resumeId ? '#fca5a5' : '#dc2626',
+              cursor: deletingId === item.resumeId ? 'wait' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; padding-right: 7rem;">
 
           <!-- Left side -->
           <div style="display: flex; align-items: flex-start; gap: 1rem;">
@@ -161,13 +314,9 @@ const formatDate = (dateStr) => {
               <p style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
                 {{ formatDate(item.createdAt) }}
               </p>
-
-              <!-- Job description tag -->
               <div v-if="item.jobDescription" style="display: inline-block; background: #ede9fe; color: #4c1d95; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;">
                 Job matched
               </div>
-
-              <!-- Score bar if completed -->
               <div v-if="item.compatibilityScore" style="display: flex; align-items: center; gap: 0.75rem;">
                 <div style="width: 120px; background: #e2e8f0; border-radius: 4px; height: 6px;">
                   <div
@@ -179,21 +328,15 @@ const formatDate = (dateStr) => {
                     }"
                   />
                 </div>
-                <span
-                  :style="{
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: getScoreColor(item.compatibilityScore)
-                  }"
-                >
+                <span :style="{ fontSize: '13px', fontWeight: '600', color: getScoreColor(item.compatibilityScore) }">
                   {{ item.compatibilityScore }}%
                 </span>
               </div>
             </div>
           </div>
 
-          <!-- Right side -->
-          <div style="display: flex; align-items: center; gap: 1rem;">
+          <!-- Status badge -->
+          <div style="display: flex; align-items: center;">
             <span
               :style="{
                 background: getStatusColor(item.status).bg,
@@ -206,19 +349,10 @@ const formatDate = (dateStr) => {
             >
               {{ item.status }}
             </span>
-
-            <button
-              v-if="item.status === 'COMPLETED'"
-              @click="router.push(`/results/${item.resumeId || item.id}`)"
-              style="background: #0f172a; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 13px; cursor: pointer;"
-            >
-              View Results
-            </button>
           </div>
 
         </div>
       </div>
-
     </div>
 
     <!-- Count -->
@@ -228,3 +362,9 @@ const formatDate = (dateStr) => {
 
   </div>
 </template>
+
+<style scoped>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
