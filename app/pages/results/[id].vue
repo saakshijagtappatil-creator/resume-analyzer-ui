@@ -264,6 +264,16 @@ const getScoreLabel = (score) => {
         </p>
       </div>
 
+      <!-- Profile Gaps -->
+      <div v-if="result.profileGaps" style="background: white; border: 1px solid #fecaca; border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 1rem;">
+          🔎 Profile Gaps
+        </h2>
+        <p style="color: #374151; font-size: 14px; line-height: 1.8;">
+          {{ result.profileGaps }}
+        </p>
+      </div>
+
       <!-- Meta Info -->
       <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; display: flex; gap: 2rem; flex-wrap: wrap;">
         <div>
