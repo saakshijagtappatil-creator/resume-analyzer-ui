@@ -3,6 +3,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+useHead({ title: 'Upload Resume | Resume Analyzer' })
+
 const api = useApi()
 const router = useRouter()
 
@@ -19,8 +21,8 @@ const handleFileSelect = (event) => {
       error.value = 'Please upload a PDF file only'
       return
     }
-    if (selected.size > 10 * 1024 * 1024) {
-      error.value = 'File size must be less than 10MB'
+    if (selected.size > 5 * 1024 * 1024) {
+      error.value = 'File size must be less than 5MB'
       return
     }
     file.value = selected
@@ -35,6 +37,10 @@ const handleDrop = (event) => {
   if (dropped) {
     if (dropped.type !== 'application/pdf') {
       error.value = 'Please upload a PDF file only'
+      return
+    }
+    if (dropped.size > 5 * 1024 * 1024) {
+      error.value = 'File size must be less than 5MB'
       return
     }
     file.value = dropped
@@ -140,7 +146,7 @@ const handleUpload = async () => {
           Choose File
         </span>
         <p style="font-size: 12px; color: #94a3b8; margin-top: 1rem;">
-          PDF files only • Max 10MB
+          PDF files only • Max 5MB
         </p>
       </div>
 
@@ -201,11 +207,12 @@ const handleUpload = async () => {
         v-model="jobDescription"
         placeholder="Paste the job description here...&#10;&#10;Example: We are looking for a Senior Java Developer with experience in Spring Boot, Kubernetes, AWS and Microservices architecture..."
         rows="8"
+        maxlength="5000"
         style="width: 100%; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #0f172a; resize: vertical; font-family: inherit; outline: none;"
       />
 
-      <p style="font-size: 12px; color: #94a3b8; margin-top: 0.5rem;">
-        {{ jobDescription.length }} characters
+      <p style="font-size: 12px; margin-top: 0.5rem;" :style="{ color: jobDescription.length > 4500 ? '#d97706' : '#94a3b8' }">
+        {{ jobDescription.length }} / 5000 characters
       </p>
 
     </div>

@@ -3,6 +3,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+useHead({ title: 'Analysis Results | Resume Analyzer' })
+
 const route = useRoute()
 const router = useRouter()
 const api = useApi()
@@ -118,6 +120,7 @@ const getScoreLabel = (score) => {
 
       <!-- Score Card -->
       <div
+        v-if="result.compatibilityScore"
         :style="{
           background: getScoreBg(result.compatibilityScore),
           border: '1px solid #e2e8f0',
@@ -162,6 +165,18 @@ const getScoreLabel = (score) => {
               transition: 'width 1s ease'
             }"
           />
+        </div>
+      </div>
+
+      <!-- No score notice -->
+      <div
+        v-else
+        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;"
+      >
+        <span style="font-size: 24px;">💡</span>
+        <div>
+          <p style="font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 2px;">No compatibility score</p>
+          <p style="font-size: 13px; color: #64748b;">Upload again with a job description to see how well your resume matches a specific role.</p>
         </div>
       </div>
 

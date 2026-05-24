@@ -3,6 +3,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+useHead({ title: 'Dashboard | Resume Analyzer' })
+
 const api = useApi()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -106,9 +108,26 @@ const formatDate = (dateStr) => {
       </p>
     </div>
 
-    <!-- Loading -->
-    <div v-if="isLoading" style="text-align: center; padding: 4rem;">
-      <p style="color: #64748b;">Loading dashboard...</p>
+    <!-- Skeleton loader -->
+    <div v-if="isLoading">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+        <div v-for="i in 4" :key="i" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+          <div class="skeleton" style="height: 12px; width: 60%; border-radius: 4px; margin-bottom: 0.75rem;"></div>
+          <div class="skeleton" style="height: 36px; width: 40%; border-radius: 4px;"></div>
+        </div>
+      </div>
+      <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
+        <div style="padding: 1.5rem; border-bottom: 1px solid #f1f5f9;">
+          <div class="skeleton" style="height: 18px; width: 150px; border-radius: 4px;"></div>
+        </div>
+        <div v-for="i in 3" :key="i" style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 1rem;">
+          <div class="skeleton" style="width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;"></div>
+          <div style="flex: 1;">
+            <div class="skeleton" style="height: 14px; width: 55%; border-radius: 4px; margin-bottom: 6px;"></div>
+            <div class="skeleton" style="height: 12px; width: 30%; border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-else>
@@ -242,3 +261,14 @@ const formatDate = (dateStr) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes pulse {
+  0%, 100% { background-color: #e2e8f0; }
+  50% { background-color: #f1f5f9; }
+}
+.skeleton {
+  background: #e2e8f0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+</style>

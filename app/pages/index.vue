@@ -20,7 +20,7 @@ onMounted(() => {
           AI-Powered Resume Analysis
         </div>
 
-        <h1 style="color: white; font-size: 48px; font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem;">
+        <h1 style="color: white; font-size: clamp(28px, 6vw, 48px); font-weight: 700; line-height: 1.2; margin-bottom: 1.5rem;">
           Analyze Your Resume<br/>
           <span style="color: #3b82f6;">Match Any Job</span>
         </h1>
@@ -127,11 +127,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Footer -->
-    <footer style="padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
-      <p style="color: #94a3b8; font-size: 14px;">© 2026 Resume Analyzer. All rights reserved.</p>
-    </footer>
-
     <!-- CTA Section -->
     <section style="padding: 80px 2rem; background: #0f172a; text-align: center;">
       <div style="max-width: 600px; margin: 0 auto;">
@@ -149,6 +144,11 @@ onMounted(() => {
         </NuxtLink>
       </div>
     </section>
+
+    <!-- Footer -->
+    <footer style="padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+      <p style="color: #94a3b8; font-size: 14px;">© 2026 Resume Analyzer. All rights reserved.</p>
+    </footer>
 
   </div>
 </template>

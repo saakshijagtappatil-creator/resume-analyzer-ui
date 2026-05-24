@@ -1,9 +1,4 @@
 <script setup>
-const authStore = useAuthStore()
-
-onMounted(() => {
-  authStore.loadFromStorage()
-})
 </script>
 
 <template>

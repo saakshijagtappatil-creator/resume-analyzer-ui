@@ -1,11 +1,12 @@
 <script setup>
-definePageMeta({
-  layout: false
-})
+definePageMeta({ layout: false })
+
+useHead({ title: 'Sign In | Resume Analyzer' })
 
 const authStore = useAuthStore()
 const api = useApi()
 const router = useRouter()
+const route = useRoute()
 
 const emailOrUsername = ref('')
 const password = ref('')
@@ -14,26 +15,29 @@ const error = ref('')
 const showPassword = ref(false)
 
 onMounted(() => {
-  if (authStore.isLoggedIn) {
-    router.push('/dashboard')
-  }
+  if (authStore.isLoggedIn) router.push('/dashboard')
 })
 
 const handleLogin = async () => {
   error.value = ''
 
-  if (!emailOrUsername.value || !password.value) {
-    error.value = 'Please fill in all fields'
+  if (!emailOrUsername.value.trim()) {
+    error.value = 'Please enter your email or username'
+    return
+  }
+  if (!password.value) {
+    error.value = 'Please enter your password'
     return
   }
 
   isLoading.value = true
 
   try {
-    const response = await api.login(emailOrUsername.value, password.value)
+    const response = await api.login(emailOrUsername.value.trim(), password.value)
     if (response.success) {
       authStore.setAuth(response.data)
-      router.push('/dashboard')
+      const redirect = route.query.redirect
+      router.push(redirect && redirect.startsWith('/') ? redirect : '/dashboard')
     }
   } catch (err) {
     error.value = 'Invalid email or password. Please try again.'
@@ -44,7 +48,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div style="min-height: calc(100vh - 64px); background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+  <div style="min-height: 100vh; background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 2rem;">
     <div style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 440px;">
 
       <!-- Header -->
@@ -72,6 +76,7 @@ const handleLogin = async () => {
             v-model="emailOrUsername"
             type="text"
             placeholder="Enter your email or username"
+            :disabled="isLoading"
             @keyup.enter="handleLogin"
             style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #0f172a; outline: none;"
           />
@@ -86,6 +91,7 @@ const handleLogin = async () => {
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               placeholder="Enter your password"
+              :disabled="isLoading"
               @keyup.enter="handleLogin"
               style="width: 100%; padding: 10px 44px 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #0f172a; outline: none;"
             />
@@ -109,8 +115,27 @@ const handleLogin = async () => {
         <button
           @click="handleLogin"
           :disabled="isLoading"
-          style="width: 100%; background: #1d4ed8; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 0.5rem;"
+          :style="{
+            width: '100%',
+            background: '#1d4ed8',
+            color: 'white',
+            border: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? '0.7' : '1',
+            marginTop: '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }"
         >
+          <svg v-if="isLoading" width="16" height="16" stroke="currentColor" viewBox="0 0 24 24" class="spin">
+            <circle cx="12" cy="12" r="9" stroke-width="2" fill="none" stroke-dasharray="28" stroke-dashoffset="10"/>
+          </svg>
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
         </button>
 
@@ -119,11 +144,16 @@ const handleLogin = async () => {
       <!-- Footer -->
       <p style="text-align: center; margin-top: 1.5rem; font-size: 14px; color: #64748b;">
         Don't have an account?
-        <NuxtLink to="/register" style="color: #1d4ed8; text-decoration: none; font-weight: 500;">
-          Sign up
-        </NuxtLink>
+        <NuxtLink to="/register" style="color: #1d4ed8; text-decoration: none; font-weight: 500;">Sign up</NuxtLink>
       </p>
 
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin { animation: spin 1s linear infinite; }
+</style>

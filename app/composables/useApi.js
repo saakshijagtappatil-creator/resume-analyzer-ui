@@ -5,13 +5,24 @@ export const useApi = () => {
   const baseURL = config.public.apiBase
 
   const getHeaders = () => {
-    const headers = {
-      'Content-Type': 'application/json'
-    }
+    const headers = { 'Content-Type': 'application/json' }
     if (authStore.token) {
       headers['Authorization'] = `Bearer ${authStore.token}`
     }
     return headers
+  }
+
+  const apiFetch = async (url, options = {}) => {
+    try {
+      return await $fetch(url, options)
+    } catch (err) {
+      if (err?.status === 401) {
+        authStore.logout()
+        await navigateTo('/login')
+        return
+      }
+      throw err
+    }
   }
 
   // ── AUTH ──────────────────────────────────────────────
@@ -38,35 +49,33 @@ export const useApi = () => {
     if (jobDescription) {
       formData.append('jobDescription', jobDescription)
     }
-    return await $fetch(`${baseURL}/api/resumes/upload`, {
+    return await apiFetch(`${baseURL}/api/resumes/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      },
+      headers: { 'Authorization': `Bearer ${authStore.token}` },
       body: formData
     })
   }
 
   const getResumeStatus = async (resumeId) => {
-    return await $fetch(`${baseURL}/api/resumes/${resumeId}/status`, {
+    return await apiFetch(`${baseURL}/api/resumes/${resumeId}/status`, {
       headers: getHeaders()
     })
   }
 
   const getResumeResult = async (resumeId) => {
-    return await $fetch(`${baseURL}/api/resumes/${resumeId}/result`, {
+    return await apiFetch(`${baseURL}/api/resumes/${resumeId}/result`, {
       headers: getHeaders()
     })
   }
 
   const getAllResumes = async () => {
-    return await $fetch(`${baseURL}/api/resumes`, {
+    return await apiFetch(`${baseURL}/api/resumes`, {
       headers: getHeaders()
     })
   }
 
   const deleteResume = async (resumeId) => {
-    return await $fetch(`${baseURL}/api/resumes/${resumeId}`, {
+    return await apiFetch(`${baseURL}/api/resumes/${resumeId}`, {
       method: 'DELETE',
       headers: getHeaders()
     })
@@ -76,6 +85,11 @@ export const useApi = () => {
     const response = await fetch(`${baseURL}/api/resumes/${resumeId}/download`, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
+    if (response.status === 401) {
+      authStore.logout()
+      await navigateTo('/login')
+      return
+    }
     if (!response.ok) throw new Error(`Download failed: ${response.status}`)
     const blob = await response.blob()
     const url = URL.createObjectURL(blob)
@@ -90,13 +104,13 @@ export const useApi = () => {
 
   // ── HISTORY ───────────────────────────────────────────
   const getHistory = async () => {
-    return await $fetch(`${baseURL}/api/history`, {
+    return await apiFetch(`${baseURL}/api/history`, {
       headers: getHeaders()
     })
   }
 
   const getHistoryStats = async () => {
-    return await $fetch(`${baseURL}/api/history/stats`, {
+    return await apiFetch(`${baseURL}/api/history/stats`, {
       headers: getHeaders()
     })
   }

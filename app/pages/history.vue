@@ -3,6 +3,8 @@ definePageMeta({
   middleware: 'auth'
 })
 
+useHead({ title: 'History | Resume Analyzer' })
+
 const api = useApi()
 const router = useRouter()
 
